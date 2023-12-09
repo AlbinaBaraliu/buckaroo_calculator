@@ -8,9 +8,6 @@ Follow these steps to set up and run the project on your local machine.
 
 ### 1. Clone the Repository
 
-Use the following command to clone the project to your local machine:
-### 1. Clone project from GitHub
-
 ```bash
 git clone https://github.com/AlbinaBaraliu/buckaroo_calculator.git
 ```
