@@ -12,7 +12,7 @@ Use the following command to clone the project to your local machine:
 ### 1. Clone project from GitHub
 
 ```bash
-git clone "project_url"
+git clone https://github.com/AlbinaBaraliu/buckaroo_calculator.git
 ```
 
 ### 2. Navigate to the Project Folder
