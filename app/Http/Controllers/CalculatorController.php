@@ -21,22 +21,74 @@ class CalculatorController extends Controller
     {
         $formula = $request->input('formula');
 
-        $result = $this->evaluateFormula($formula);
+        $result = $this->splitFormula($formula);
 
-        $this->saveCalculation($formula, $result,$request->userId);
+        $this->saveCalculation($formula, $result, $request->userId);
 
         return response()->json(['result' => $result]);
     }
-
-    private function evaluateFormula($formula)
+    private function splitFormula($expression): float|int
     {
-        $language = new ExpressionLanguage();
+        $elements = preg_split('/([\+\-\*\/\(\)])/', $expression, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY);
 
-        try {
-            return $language->evaluate($formula);
-        } catch (\Throwable $e) {
-            return 'Error in the formula';
+        for ($i = 0; $i < count($elements); $i++) {
+            if ($elements[$i] == '(') {
+                $tempArray = array();
+                while ($i < count($elements) && $elements[$i] != ')') {
+                    $tempArray[] = $elements[$i];
+                    unset($elements[$i]);
+                    $i++;
+                }
+                $elements[$i] = $this->evaluateFormula($tempArray);
+                $elements = array_values($elements);
+                $i = 0;
+            }
         }
+        return $this->evaluateFormula($elements);
+
+    }
+
+    private function evaluateFormula($elements): float|int
+    {
+        $result = 0;
+        for ($i = 0; $i < count($elements); $i++) {
+            if ($elements[$i] == '/') {
+                $result = (float)$elements[$i - 1] / (float)$elements[$i + 1];
+                $elements = array_replace($elements, array($i + 1 => $result));
+                unset($elements[$i - 1]);
+                unset($elements[$i]);
+                $i = 0;
+            }
+            elseif ($elements[$i] == '*') {
+                $result = (float)$elements[$i - 1] * (float)$elements[$i + 1];
+                $elements = array_replace($elements, array($i + 1 => $result));
+                unset($elements[$i - 1]);
+                unset($elements[$i]);
+                $i = 0;
+            }
+            $elements = array_values($elements);
+        }
+        for ($i = 0; $i < count($elements); $i++) {
+            if ($elements[$i] == '+') {
+                $result = (float)$elements[$i - 1] + (float)$elements[$i + 1];
+                $elements = array_replace($elements, array($i + 1 => $result));
+                unset($elements[$i]);
+                $i = 0;
+            }
+            elseif ($elements[$i] == '-') {
+                if (empty($elements[$i - 1])) {
+                    $result = -(float)$elements[$i + 1];
+                } else {
+                    $result = (float)$elements[$i - 1] - (float)$elements[$i + 1];
+                }
+                $elements = array_replace($elements, array($i + 1 => $result));
+                unset($elements[$i]);
+                $i = 0;
+            }
+            $elements = array_values($elements);
+
+        }
+        return $result;
     }
 
     private function saveCalculation($formula, $result, $userId)
